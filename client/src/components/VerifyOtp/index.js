@@ -21,6 +21,10 @@ import memories from "../../images/memories.png";
 // } from "../../constants/actionTypes";
 import { VERIFY_USER, RESEND_USER_OTP } from "../../graphql/Mutation";
 import { useMutation } from "@apollo/client";
+import {
+  getEmailLocally,
+  removeEmailLocally,
+} from "../../utils/userOperations";
 
 const VerifyOtp = (props) => {
   const classes = useStyles();
@@ -90,14 +94,14 @@ const VerifyOtp = (props) => {
 
     try {
       // dispatch({ type: RESEND_OTP_API_REQUEST, payload: {} });
-      const email = localStorage.getItem("email");
-
-      const response = await resendOtp({
+      const email = getEmailLocally();
+      console.log("local email", email);
+      await resendOtp({
         variables: {
-          email,
+          email: email,
         },
       });
-      console.log("response_resend:::", response.data);
+      // console.log("response_resend:::", response.data);
 
       // dispatch({
       //   type: RESEND_OTP_SUCCESS_RESPONSE,
@@ -130,7 +134,7 @@ const VerifyOtp = (props) => {
         ...showModalObjectResend,
         showSuccessModal: false,
         ShowWarningModal: true,
-        msg: err?.response?.data?.error,
+        msg: err?.message,
       });
     }
   };
@@ -169,21 +173,22 @@ const VerifyOtp = (props) => {
         isVerifyLoading: true,
         isVerifyDisable: true,
       });
-      const email = localStorage.getItem("email");
-      console.log("email::", email);
+      const email = getEmailLocally();
+      // console.log("email::", email);
 
       try {
         // dispatch({ type: VERIFY_OTP_API_REQUEST, payload: {} });
 
-        const response = await verifyOtp({
+        await verifyOtp({
           variables: {
             email,
             otpCode,
           },
         });
-        console.log("response_verify:::", response);
+        // console.log("response_verify:::", response);
 
-        localStorage.removeItem("email");
+        // localStorage.removeItem("email");
+        removeEmailLocally();
         // dispatch({
         //   type: VERIFY_OTP_SUCCESS_RESPONSE,
         //   payload: response.data.verifyUsersOtp,
@@ -216,7 +221,7 @@ const VerifyOtp = (props) => {
         setValidatedObject({
           ...validatedObject,
           isWarning: true,
-          message: err?.response?.data?.error,
+          message: err?.message,
         });
       }
     }
@@ -253,7 +258,8 @@ const VerifyOtp = (props) => {
                   size="large"
                   variant="contained"
                   className="mt-2"
-                  onClick={() => navigate("/login")}>
+                  onClick={() => navigate("/login")}
+                >
                   Login
                 </Button>
               </div>
@@ -303,7 +309,8 @@ const VerifyOtp = (props) => {
                 </div>
                 {validatedObject.isWarning && (
                   <ErrorMessageAlert
-                    message={validatedObject.message}></ErrorMessageAlert>
+                    message={validatedObject.message}
+                  ></ErrorMessageAlert>
                 )}
 
                 <div className="col-12">
@@ -312,7 +319,8 @@ const VerifyOtp = (props) => {
                       disabled={loadingObject.isVerifyDisable}
                       type="submit"
                       className="btn btn-primary px-4 me-4"
-                      variant="contained">
+                      variant="contained"
+                    >
                       {loadingObject.isVerifyLoading === true ? (
                         <SimpleSpinner></SimpleSpinner>
                       ) : (
@@ -331,7 +339,8 @@ const VerifyOtp = (props) => {
                       color="primary"
                       variant="outlined"
                       size="medium"
-                      onClick={resetState}>
+                      onClick={resetState}
+                    >
                       Cancel
                     </Button>
                   </div>
@@ -341,14 +350,16 @@ const VerifyOtp = (props) => {
               <div role="alert">
                 <Typography
                   variant="subtitle2"
-                  style={{ fontSize: "16px", marginTop: 16 }}>
+                  style={{ fontSize: "16px", marginTop: 16 }}
+                >
                   Didn't receive the code?
                   <span
                     style={{
                       cursor: "pointer",
                       fontWeight: "bold",
                     }}
-                    onClick={sendOtpAgain}>
+                    onClick={sendOtpAgain}
+                  >
                     {loadingObject.isResendLoading === true ? (
                       <SimpleSpinner color="black"></SimpleSpinner>
                     ) : (
@@ -368,7 +379,8 @@ const VerifyOtp = (props) => {
         msg={showModalObjectResend.msg}
         onCloseModal={() => {
           onCloseErrorModalForResendOtp();
-        }}></InfoModal>
+        }}
+      ></InfoModal>
 
       <SuccessModal
         showModal={showModalObject.showSuccessModal}
@@ -376,14 +388,16 @@ const VerifyOtp = (props) => {
         msg={showModalObject.msg}
         onCloseModal={() => {
           onCloseErrorModal();
-        }}></SuccessModal>
+        }}
+      ></SuccessModal>
 
       <WarningModal
         showModal={showModalObject.ShowWarningModal}
         msg={showModalObject.msg}
         onCloseModal={() => {
           onCloseErrorModal();
-        }}></WarningModal>
+        }}
+      ></WarningModal>
     </div>
   );
 };

@@ -6,7 +6,7 @@ import { TextField, Button, Typography } from "@mui/material";
 import UseInputHook from "../../hooks/useInputHooks";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { toastMessageFailure } from "../../utils/toastMessages";
+import { toastMessageFailure } from "../../utils/toastMessage";
 import ErrorMessageAlert from "../Alert";
 import { SimpleSpinner } from "../Loading";
 import SuccessModal from "../ToastModal/SuccessModal";
@@ -23,6 +23,12 @@ import {
   RESEND_USER_EMAIL_OTP,
 } from "../../graphql/Mutation";
 import { useMutation } from "@apollo/client";
+import {
+  getEmailLocally,
+  removeCurrentUser,
+  removeEmailLocally,
+  setEmailLocally,
+} from "../../utils/userOperations";
 
 const UpdateEmail = () => {
   const classes = useStyles();
@@ -131,13 +137,14 @@ const UpdateEmail = () => {
       try {
         // dispatch({ type: SEND_OTP_API_REQUEST, payload: {} });
 
-        const response = await updateEmailOnProfile({
+        await updateEmailOnProfile({
           variables: {
             email,
           },
         });
-        console.log("res::", response.data.updateEmailOnProfile);
-        localStorage.setItem("email", email);
+        // console.log("res::", response.data.updateEmailOnProfile);
+        // localStorage.setItem("email", email);
+        setEmailLocally(email);
         // dispatch({ type: SEND_OTP_SUCCESS_RESPONSE, payload: response.data });
 
         // if (response.status === 200) {
@@ -166,6 +173,12 @@ const UpdateEmail = () => {
           ...loadingObject,
           isLoading: false,
           isDisable: false,
+        });
+
+        setValidatedObject({
+          ...validatedObject,
+          isWarning: true,
+          message: err.message,
         });
 
         // if (err?.response?.status === 401) {
@@ -224,6 +237,9 @@ const UpdateEmail = () => {
         });
         setShowOtpVerification(false);
         resetState();
+        // localStorage.removeItem("token");
+        // localStorage.removeItem("currentUser");
+        removeCurrentUser();
         setShowModalObject({
           ...showModalObject,
           showSuccessModal: true,
@@ -231,6 +247,7 @@ const UpdateEmail = () => {
           showInfoModal: false,
           msg: "Email update successfully.",
         });
+        removeEmailLocally();
         return response;
       } catch (err) {
         // dispatch({
@@ -242,6 +259,12 @@ const UpdateEmail = () => {
           ...loadingObject,
           isLoading: false,
           isDisable: false,
+        });
+
+        setValidatedObject({
+          ...validatedObject,
+          isWarning: true,
+          message: err.message,
         });
 
         // if (err?.response?.status === 401) {
@@ -263,7 +286,8 @@ const UpdateEmail = () => {
 
   let sendOtpAgain = async (e) => {
     e.preventDefault();
-    let email = localStorage.getItem("email");
+    let email = getEmailLocally();
+
     setValidatedObject({ ...validatedObject, isWarning: false, message: "" });
     setResetLoadingObject({
       ...resetLoadingObject,
@@ -307,7 +331,7 @@ const UpdateEmail = () => {
       });
       if (err?.response?.status === 401) {
         toastMessageFailure("Your session is expired");
-        localStorage.removeItem("jwtToken");
+        localStorage.removeItem("token");
         dispatch({ type: "SET_CURRENT_USER", payload: {} });
         // history.push("/login");
       } else {
@@ -345,7 +369,8 @@ const UpdateEmail = () => {
                   style={{ pointerEvents: sendEmailState.disbale && "none" }}
                   onClick={() => navigate("/dashboard")}
                   variant="contained"
-                  className="btn btn-primary">
+                  className="btn btn-primary"
+                >
                   Back
                 </Button>
               </div>
@@ -385,7 +410,8 @@ const UpdateEmail = () => {
 
                     {validatedObject.isWarning && (
                       <ErrorMessageAlert
-                        message={validatedObject.message}></ErrorMessageAlert>
+                        message={validatedObject.message}
+                      ></ErrorMessageAlert>
                     )}
 
                     <div className="col-12">
@@ -397,7 +423,8 @@ const UpdateEmail = () => {
                           color="primary"
                           size="large"
                           fullWidth
-                          className="btn btn-primary px-4 me-4">
+                          className="btn btn-primary px-4 me-4"
+                        >
                           {loadingObject.isLoading === true ? (
                             <SimpleSpinner></SimpleSpinner>
                           ) : (
@@ -413,7 +440,8 @@ const UpdateEmail = () => {
                           variant="outlined"
                           size="medium"
                           fullWidth
-                          className="btn btn-outline-primary px-4">
+                          className="btn btn-outline-primary px-4"
+                        >
                           Cancel
                         </Button>
                       </div>
@@ -436,7 +464,8 @@ const UpdateEmail = () => {
                     </Typography>
                     <Typography
                       variant="subtitle2"
-                      style={{ fontSize: "16px" }}>
+                      style={{ fontSize: "16px" }}
+                    >
                       We have sent an OTP code to your Email:
                       <b className="alert-success">
                         {typeof window !== "undefined"
@@ -449,7 +478,8 @@ const UpdateEmail = () => {
                       <br></br>
                       <Typography
                         variant="subtitle2"
-                        style={{ color: "#155724" }}>
+                        style={{ color: "#155724" }}
+                      >
                         Thank you!
                       </Typography>
                     </Typography>
@@ -472,7 +502,8 @@ const UpdateEmail = () => {
                     </div>
                     {validatedObject.isWarning && (
                       <ErrorMessageAlert
-                        message={validatedObject.message}></ErrorMessageAlert>
+                        message={validatedObject.message}
+                      ></ErrorMessageAlert>
                     )}
 
                     <div className="col-12">
@@ -481,7 +512,8 @@ const UpdateEmail = () => {
                           disabled={loadingObject.isDisable}
                           type="submit"
                           className="btn btn-primary px-4 me-4"
-                          variant="contained">
+                          variant="contained"
+                        >
                           {loadingObject.isLoading === true ? (
                             <SimpleSpinner></SimpleSpinner>
                           ) : (
@@ -500,7 +532,8 @@ const UpdateEmail = () => {
                           color="primary"
                           variant="outlined"
                           size="medium"
-                          onClick={resetState}>
+                          onClick={resetState}
+                        >
                           Cancel
                         </Button>
                       </div>
@@ -510,14 +543,16 @@ const UpdateEmail = () => {
                   <div role="alert">
                     <Typography
                       variant="subtitle2"
-                      style={{ fontSize: "16px", marginTop: 16 }}>
+                      style={{ fontSize: "16px", marginTop: 16 }}
+                    >
                       Didn't receive the code?
                       <span
                         style={{
                           cursor: "pointer",
                           fontWeight: "bold",
                         }}
-                        onClick={sendOtpAgain}>
+                        onClick={sendOtpAgain}
+                      >
                         {resetLoadingObject.isResendLoading === true ? (
                           <SimpleSpinner color="black"></SimpleSpinner>
                         ) : (
@@ -538,14 +573,16 @@ const UpdateEmail = () => {
         msg={showModalObject.msg}
         onCloseModal={() => {
           onCloseErrorModalSuccess();
-        }}></SuccessModal>
+        }}
+      ></SuccessModal>
 
       <WarningModal
         showModal={showModalObject.ShowWarningModal}
         msg={showModalObject.msg}
         onCloseModal={() => {
           onCloseErrorModal();
-        }}></WarningModal>
+        }}
+      ></WarningModal>
 
       <InfoModal
         showModal={showModalObject.showInfoModal}
@@ -553,7 +590,8 @@ const UpdateEmail = () => {
         msg={showModalObject.msg}
         onCloseModal={() => {
           onCloseErrorModal();
-        }}></InfoModal>
+        }}
+      ></InfoModal>
     </div>
   );
 };

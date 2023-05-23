@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { TextField, Button, Typography } from "@mui/material";
 import UseInputHook from "../../hooks/useInputHooks";
-import { useDispatch } from "react-redux";
+// import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import SuccessModal from "../ToastModal/SuccessModal";
 import WarningModal from "../ToastModal/WarningModal";
 import ErrorMessageAlert from "../Alert";
-import { toastMessageFailure } from "../../utils/toastMessages";
+// import { toastMessageFailure } from "../../utils/toastMessage";
 import "../Signup/style.scss";
 import useStyles from "../Signup/styles";
 
@@ -14,14 +14,15 @@ import memories from "../../images/memories.png";
 // import { apiClient } from "../../utils/request";
 // import { useSelector } from "react-redux";
 import { SimpleSpinner } from "../Loading";
-import {
-  REMOVE_CURRENT_USER,
-  // UPDATE_PASSWORD_API_REQUEST,
-  // UPDATE_PASSWORD_SUCCESS_RESPONSE,
-  // UPDATE_PASSWORD_FAILURE_RESPONSE,
-} from "../../constants/actionTypes";
+// import {
+//   REMOVE_CURRENT_USER,
+//   // UPDATE_PASSWORD_API_REQUEST,
+//   // UPDATE_PASSWORD_SUCCESS_RESPONSE,
+//   // UPDATE_PASSWORD_FAILURE_RESPONSE,
+// } from "../../constants/actionTypes";
 import { UPDATE_PASSWORD_ON_PROFILE } from "../../graphql/Mutation";
 import { useMutation } from "@apollo/client";
+import { removeCurrentUser } from "../../utils/userOperations";
 
 const UpdatePasswordOnProfile = () => {
   //   const isLogin = localStorage.getItem("token");
@@ -49,7 +50,7 @@ const UpdatePasswordOnProfile = () => {
     ShowWarningModal: false,
     msg: "",
   });
-  const dispatch = useDispatch();
+  // const dispatch = useDispatch();
   const navigate = useNavigate();
   const [passwordChangeOnProfile] = useMutation(UPDATE_PASSWORD_ON_PROFILE);
 
@@ -88,6 +89,10 @@ const UpdatePasswordOnProfile = () => {
   };
 
   let validateRequest = () => {
+    const re =
+      /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9])(?!.*\s).{9,}$/;
+
+    const passwordValidation = re.test(String(bindPassword.value));
     if (
       oldPassword === "" ||
       oldPassword === null ||
@@ -103,6 +108,13 @@ const UpdatePasswordOnProfile = () => {
         ...validatedObject,
         isWarning: true,
         message: "New Passwwod is required!",
+      });
+    } else if (!passwordValidation) {
+      return setValidatedObject({
+        ...validatedObject,
+        isWarning: true,
+        message:
+          "Please choose a more secure password. password must be greater than 8 characters long and contain at least one lowercase letter, one uppercase letter, one numeric digit, and one special character",
       });
     } else if (password !== confirmPassword) {
       return setValidatedObject({
@@ -161,6 +173,9 @@ const UpdatePasswordOnProfile = () => {
           isDisable: false,
         });
         resetState();
+        // localStorage.removeItem("token");
+        // localStorage.removeItem("currentUser");
+        removeCurrentUser();
         setShowModalObject({
           ...showModalObject,
           showSuccessModal: true,
@@ -180,18 +195,24 @@ const UpdatePasswordOnProfile = () => {
           isDisable: false,
         });
 
-        if (err?.response?.status === 401) {
-          toastMessageFailure("Your session is expired");
-          localStorage.removeItem("jwtToken");
-          dispatch({ type: REMOVE_CURRENT_USER, payload: {} });
-          navigate("/login");
-        } else {
-          setValidatedObject({
-            ...validatedObject,
-            isWarning: true,
-            message: err?.response?.data?.error,
-          });
-        }
+        setValidatedObject({
+          ...validatedObject,
+          isWarning: true,
+          message: err?.message,
+        });
+
+        // if (err?.response?.status === 401) {
+        //   toastMessageFailure("Your session is expired");
+        //   localStorage.removeItem("jwtToken");
+        //   dispatch({ type: REMOVE_CURRENT_USER, payload: {} });
+        //   navigate("/login");
+        // } else {
+        //   setValidatedObject({
+        //     ...validatedObject,
+        //     isWarning: true,
+        //     message: err?.response?.data?.error,
+        //   });
+        // }
       }
     }
   };
@@ -239,7 +260,8 @@ const UpdatePasswordOnProfile = () => {
                 <form onSubmit={updatePssword} className="row g-3 pt-4">
                   {validatedObject.isWarning && (
                     <ErrorMessageAlert
-                      message={validatedObject.message}></ErrorMessageAlert>
+                      message={validatedObject.message}
+                    ></ErrorMessageAlert>
                   )}
 
                   <div className="col-md-12">
@@ -297,7 +319,8 @@ const UpdatePasswordOnProfile = () => {
                         color="primary"
                         size="large"
                         fullWidth
-                        className="btn btn-primary px-4 me-4">
+                        className="btn btn-primary px-4 me-4"
+                      >
                         {loadingObject.isLoading === true ? (
                           <SimpleSpinner></SimpleSpinner>
                         ) : (
@@ -310,7 +333,8 @@ const UpdatePasswordOnProfile = () => {
                         variant="outlined"
                         size="medium"
                         fullWidth
-                        onClick={() => navigate("/dashboard")}>
+                        onClick={() => navigate("/dashboard")}
+                      >
                         Cancel
                       </Button>
                     </div>
@@ -327,14 +351,16 @@ const UpdatePasswordOnProfile = () => {
         msg={showModalObject.msg}
         onCloseModal={() => {
           onCloseErrorModal();
-        }}></SuccessModal>
+        }}
+      ></SuccessModal>
       <WarningModal
         showModal={showModalObject.ShowWarningModal}
         btnText="Login"
         msg={showModalObject.msg}
         onCloseModal={() => {
           onCloseErrorModalLogin();
-        }}></WarningModal>
+        }}
+      ></WarningModal>
     </>
   );
 };

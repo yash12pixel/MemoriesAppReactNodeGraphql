@@ -1,4 +1,5 @@
 import { gql } from "apollo-server-express";
+
 const userTypeDefs = gql`
   type User {
     id: ID!
@@ -23,43 +24,10 @@ const userTypeDefs = gql`
     user: User!
   }
 
-  input UserInput {
-    firstName: String!
-    lastName: String!
-    email: String!
-    password: String!
-  }
-
-  input UserUpdateInput {
-    firstName: String
-    lastName: String
-    email: String
-    password: String
-  }
-
-  input VerifyOtp {
-    email: String!
-    otpCode: String!
-  }
-
-  input ResendOtp {
-    email: String
-  }
-
-  input Login {
-    email: String!
-    password: String!
-  }
-
-  input UpdatePassword {
-    password: String!
-    otpCode: String!
-  }
-
-  input updatePasswordOnProfile {
-    oldPassword: String
-    password: String!
-    confirmPassword: String!
+  type Mail {
+    to: String
+    subject: String
+    html: String
   }
 
   type Query {
@@ -87,8 +55,7 @@ const userTypeDefs = gql`
       password: String!
       confirmPassword: String!
     ): User
-    updateUser(id: ID!, input: UserUpdateInput): User
-    deleteUser(id: ID!): Boolean
+    sendEmail(to: String, subject: String, html: String): Mail
   }
 `;
 

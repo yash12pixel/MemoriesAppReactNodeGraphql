@@ -8,6 +8,9 @@ import Form from "../../components/Form/Form";
 import NavBar from "../../components/Navbar";
 import WarningModal from "../../components/ToastModal/WarningModal";
 import { useNavigate } from "react-router-dom";
+import { GET_POSTS_BY_USER } from "../../graphql/Query";
+import { useQuery } from "@apollo/client";
+import { getCurrentUser } from "../../utils/userOperations";
 
 const Memories = () => {
   // console.log("post data:::", data?.getPostsByUser.posts);
@@ -21,12 +24,39 @@ const Memories = () => {
     msg: "",
   });
 
+  const [userId, setUserId] = useState("");
+
+  // const storedUser = localStorage.getItem("currentUser");
+  const currentUser = getCurrentUser();
+
   // const user = useSelector((state) => state.loginReducer.user);
-  // console.log("user:::", user);
+  // console.log("user:::", currentUser);
+
+  const { data, loading, error } = useQuery(GET_POSTS_BY_USER, {
+    variables: {
+      id: userId,
+    },
+    onCompleted: () => {
+      return data;
+    },
+  });
+
+  if (error) {
+    console.log("error", error);
+  }
 
   useEffect(() => {
+    // console.log("yes");
     LoginCheck();
   }, []);
+
+  // useEffect(() => {
+  //   setUserId(currentUser.id);
+  // });
+
+  useEffect(() => {
+    setUserId(currentUser.id);
+  }, [currentUser]);
 
   const LoginCheck = () => {
     if (!localStorage.getItem("token")) {
@@ -58,11 +88,16 @@ const Memories = () => {
         <Container>
           <Grid
             container
-            justifyContent="space-between"
+            justifycontent="space-between"
             alignItems="stretch"
-            spacing={3}>
+            spacing={4}
+          >
             <Grid item xs={12} sm={7}>
-              <Posts setCurrentId={setCurrentId} />
+              <Posts
+                setCurrentId={setCurrentId}
+                data={data}
+                loading={loading}
+              />
             </Grid>
             <Grid item xs={12} sm={4}>
               <Form currentId={currentId} setCurrentId={setCurrentId} />
@@ -76,7 +111,8 @@ const Memories = () => {
         msg={showModalObject.msg}
         onCloseModal={() => {
           onCloseErrorModalLogin();
-        }}></WarningModal>
+        }}
+      ></WarningModal>
     </Container>
   );
 };

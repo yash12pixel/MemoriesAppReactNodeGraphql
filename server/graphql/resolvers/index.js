@@ -1,5 +1,6 @@
-import userResolvers from "./userResolvers.js";
-import postResolver from "./postResolvers.js";
-const resolvers = [userResolvers, postResolver];
+import userResolvers from "./userResolver.js";
+import postResolver from "./postResolver.js";
 
-export default resolvers;
+const resolvers = [userResolvers,postResolver];
+
+export default resolvers

@@ -15,6 +15,7 @@ import memories from "../../images/memories.png";
 import "./style.scss";
 import { useMutation } from "@apollo/client";
 import { CREATE_USER } from "../../graphql/Mutation";
+import { setEmailLocally } from "../../utils/userOperations";
 
 const Signup = () => {
   const classes = useStyles();
@@ -89,6 +90,16 @@ const Signup = () => {
         message:
           "Please choose a more secure password. password must be greater than 8 characters long and contain at least one lowercase letter, one uppercase letter, one numeric digit, and one special character",
       });
+    } else if (
+      confirmPassword === "" ||
+      confirmPassword === null ||
+      confirmPassword === undefined
+    ) {
+      return setValidatedObject({
+        ...validatedObject,
+        isWarning: true,
+        message: "Confirm-Password is required!",
+      });
     } else if (password !== confirmPassword) {
       return setValidatedObject({
         ...validatedObject,
@@ -120,14 +131,14 @@ const Signup = () => {
         message: "",
       });
 
-      let data;
+      // let data;
 
-      data = {
-        firstName,
-        lastName,
-        email,
-        password,
-      };
+      // data = {
+      //   firstName,
+      //   lastName,
+      //   email,
+      //   password,
+      // };
 
       try {
         // dispatch({ type: SIGNUP_API_REQUEST, payload: {} });
@@ -141,8 +152,8 @@ const Signup = () => {
         //   .then((response) => {
         //     return response?.config?.data;
         //   });
-        console.log("data:::", data);
-        const result = await createUser({
+        // console.log("data:::", data);
+        await createUser({
           variables: {
             firstName,
             lastName,
@@ -150,13 +161,16 @@ const Signup = () => {
             password,
           },
         });
-        console.log("response signup:: ", result);
+
+        // console.log("response signup:: ", result);
+
         // dispatch({
         //   type: SIGNUP_SUCCESS_RESPONSE,
         //   payload: result.data.createUser,
         // });
 
-        localStorage.setItem("email", email);
+        // localStorage.setItem("email", email);
+        setEmailLocally(email);
 
         setLoadingObject({
           ...loadingObject,
@@ -164,6 +178,13 @@ const Signup = () => {
           isLoading: false,
         });
 
+        // navigate("/verify-otp");
+
+        // await sendEmail(
+        //   result.email,
+        //   config.email.signupSubject,
+        //   config.email.template.emailSignupOtp(result.otpCode)
+        // );
         navigate("/verify-otp");
 
         resetState();
@@ -172,10 +193,16 @@ const Signup = () => {
         //   type: SIGNUP_FAILURE_RESPONSE,
         //   payload: err?.response?.data?.error,
         // });
+        // console.log("errro in signup::", err.message);
+        setLoadingObject({
+          ...loadingObject,
+          isDisable: false,
+          isLoading: false,
+        });
         setValidatedObject({
           ...validatedObject,
           isWarning: true,
-          message: err?.response?.data?.error,
+          message: err.message,
         });
       }
     }
@@ -204,7 +231,8 @@ const Signup = () => {
                   type="submit"
                   variant="contained"
                   onClick={() => navigate("/login")}
-                  color="primary">
+                  color="primary"
+                >
                   Login
                 </Button>
               </div>
@@ -223,7 +251,8 @@ const Signup = () => {
               <form onSubmit={signup} className="row g-3 pt-4">
                 {validatedObject.isWarning && (
                   <ErrorMessageAlert
-                    message={validatedObject.message}></ErrorMessageAlert>
+                    message={validatedObject.message}
+                  ></ErrorMessageAlert>
                 )}
 
                 <div className="col-md-12">
@@ -320,7 +349,8 @@ const Signup = () => {
                       color="primary"
                       size="large"
                       fullWidth
-                      className="btn btn-primary px-4 me-4">
+                      className="btn btn-primary px-4 me-4"
+                    >
                       {loadingObject.isLoading === true ? (
                         <SimpleSpinner></SimpleSpinner>
                       ) : (
@@ -333,7 +363,8 @@ const Signup = () => {
                       variant="outlined"
                       size="medium"
                       fullWidth
-                      onClick={resetState}>
+                      onClick={resetState}
+                    >
                       clear
                     </Button>
                   </div>

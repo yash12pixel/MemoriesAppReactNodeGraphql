@@ -65,13 +65,25 @@ const ForgetPassword = (props) => {
   };
 
   let validateRequest = () => {
+    const re_email =
+      //eslint-disable-next-line
+      /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    const emailValidation = re_email.test(String(bindEmail.value));
+
     if (email === "" || email === null || email === undefined) {
       return setValidatedObject({
         ...validatedObject,
         isWarning: true,
         message: "Email required!",
       });
+    } else if (!emailValidation) {
+      return setValidatedObject({
+        ...validatedObject,
+        isWarning: true,
+        message: "Please provide valid email",
+      });
     }
+
     return true;
   };
 
@@ -129,7 +141,7 @@ const ForgetPassword = (props) => {
         setValidatedObject({
           ...validatedObject,
           isWarning: true,
-          message: err?.response?.data?.error,
+          message: err?.message,
         });
       }
     }
@@ -157,7 +169,8 @@ const ForgetPassword = (props) => {
                   style={{ pointerEvents: loadingObject.isDisable && "none" }}
                   onClick={() => navigate("/login")}
                   variant="contained"
-                  className="btn btn-primary">
+                  className="btn btn-primary"
+                >
                   Login
                 </Button>
               </div>
@@ -175,7 +188,8 @@ const ForgetPassword = (props) => {
               </Typography>
               <form
                 onSubmit={onForgotCredentailSubmit}
-                className="row g-3 pt-4">
+                className="row g-3 pt-4"
+              >
                 <div className="col-md-12">
                   {/* <label for="inputEmail4" className="form-label">
                     Email
@@ -195,7 +209,8 @@ const ForgetPassword = (props) => {
 
                 {validatedObject.isWarning && (
                   <ErrorMessageAlert
-                    message={validatedObject.message}></ErrorMessageAlert>
+                    message={validatedObject.message}
+                  ></ErrorMessageAlert>
                 )}
 
                 <div className="col-12">
@@ -207,7 +222,8 @@ const ForgetPassword = (props) => {
                       color="primary"
                       size="large"
                       fullWidth
-                      className="btn btn-primary px-4 me-4">
+                      className="btn btn-primary px-4 me-4"
+                    >
                       {loadingObject.isLoading === true ? (
                         <SimpleSpinner></SimpleSpinner>
                       ) : (
@@ -223,7 +239,8 @@ const ForgetPassword = (props) => {
                       variant="outlined"
                       size="medium"
                       fullWidth
-                      className="btn btn-outline-primary px-4">
+                      className="btn btn-outline-primary px-4"
+                    >
                       Cancel
                     </Button>
                   </div>
@@ -239,14 +256,16 @@ const ForgetPassword = (props) => {
         msg={showModalObject.msg}
         onCloseModal={() => {
           onCloseErrorModalSuccess();
-        }}></SuccessModal>
+        }}
+      ></SuccessModal>
 
       <WarningModal
         showModal={showModalObject.ShowWarningModal}
         msg={showModalObject.msg}
         onCloseModal={() => {
           onCloseErrorModal();
-        }}></WarningModal>
+        }}
+      ></WarningModal>
     </div>
   );
 };

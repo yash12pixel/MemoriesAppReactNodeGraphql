@@ -1,0 +1,16 @@
+version: "3.8"
+services:
+  memories_client:
+    container_name: memories_client
+    image: memories_client_image
+    stdin_open: true
+    tty: true
+    build: ./client
+    ports:
+      - "3000:3000"
+  memories_server:
+    container_name: memories_server
+    image: memories_server_image
+    build: ./server
+    ports:
+      - "5001:5001"

@@ -23,7 +23,7 @@ const initialState = {
   message: "",
 };
 
-export default (state = initialState, action) => {
+const posts = (state = initialState, action) => {
   switch (action.type) {
     case FETCH_ALL_POST_API_REQUEST:
       return {
@@ -128,3 +128,5 @@ export default (state = initialState, action) => {
       return state;
   }
 };
+
+export default posts;

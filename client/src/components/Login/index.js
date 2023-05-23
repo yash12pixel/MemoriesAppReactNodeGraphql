@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import UseInputHook from "../../hooks/useInputHooks";
-import { connect, useDispatch } from "react-redux";
-import jwtDecode from "jwt-decode";
-import { setCurrentUser } from "../../reducers/login";
+// import {  useDispatch } from "react-redux";
+// import jwtDecode from "jwt-decode";
+// import { setCurrentUser } from "../../reducers/login";
 import { ToastContainer } from "react-toastify";
 import ErrorMessageAlert from "../Alert";
 import { SimpleSpinner } from "../Loading";
@@ -15,6 +15,13 @@ import "../Signup/style.scss";
 import memories from "../../images/memories.png";
 import { useMutation } from "@apollo/client";
 import { LOGIN } from "../../graphql/Mutation";
+import {
+  getCurrentUser,
+  setCurrentUser,
+  setEmailLocally,
+} from "../../utils/userOperations";
+// import { GET_POSTS_BY_USER } from "../../graphql/Query";
+// import WarningModal from "../ToastModal/WarningModal";
 
 const Login = () => {
   const classes = useStyles();
@@ -39,44 +46,56 @@ const Login = () => {
   const [email, bindEmail, resetEmail] = UseInputHook("");
   const [password, bindPassword, resetPassword] = UseInputHook("");
 
-  const dispatch = useDispatch();
+  // const dispatch = useDispatch();
   const navigate = useNavigate();
   const [login] = useMutation(LOGIN);
 
+  // const storedUser = localStorage.getItem("currentUser");
+  const currentUser = getCurrentUser();
+
+  useEffect(() => {
+    if (currentUser) {
+      navigate("/dashboard");
+    }
+  });
+
   let validateRequest = () => {
-    const re =
-      /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9])(?!.*\s).{9,}$/;
-    const passwordValidation = re.test(String(bindPassword.value));
-    const re_email =
-      //eslint-disable-next-line
-      /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-    const emailValidation = re_email.test(String(bindEmail.value));
+    // const re =
+    //   /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9])(?!.*\s).{9,}$/;
+    // const passwordValidation = re.test(String(bindPassword.value));
+    // const re_email =
+    //   //eslint-disable-next-line
+    //   /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    // const emailValidation = re_email.test(String(bindEmail.value));
     if (email === "" || email === null || email === undefined) {
       return setValidatedObject({
         ...validatedObject,
         isWarning: true,
         message: "Email required!",
       });
-    } else if (!emailValidation) {
-      return setValidatedObject({
-        ...validatedObject,
-        isWarning: true,
-        message: "Please provide valid email",
-      });
-    } else if (password === "" || password === null || password === undefined) {
+    }
+    // else if (!emailValidation) {
+    //   return setValidatedObject({
+    //     ...validatedObject,
+    //     isWarning: true,
+    //     message: "Please provide valid email",
+    //   });
+    // }
+    else if (password === "" || password === null || password === undefined) {
       return setValidatedObject({
         ...validatedObject,
         isWarning: true,
         message: "Password required!",
       });
-    } else if (!passwordValidation) {
-      return setValidatedObject({
-        ...validatedObject,
-        isWarning: true,
-        message:
-          "Password must be greater than 8 characters long and contain at least one lowercase letter, one uppercase letter, one numeric digit, and one special character",
-      });
     }
+    // else if (!passwordValidation) {
+    //   return setValidatedObject({
+    //     ...validatedObject,
+    //     isWarning: true,
+    //     message:
+    //       "Password must be greater than 8 characters long and contain at least one lowercase letter, one uppercase letter, one numeric digit, and one special character",
+    //   });
+    // }
     return true;
   };
 
@@ -114,8 +133,10 @@ const Login = () => {
             email,
             password,
           },
+          // refetchQueries: [{ query: GET_POSTS_BY_USER }],
+          // fetchPolicy: "no-cache",
         });
-        console.log("data:::", data.login);
+        // console.log("data:::", data.login);
 
         setLoginApiLoadingObject({
           ...loginApiLoadingObject,
@@ -124,7 +145,8 @@ const Login = () => {
         });
         if (data?.login?.isOTPVerified === false) {
           //   setAccountVerified(false);
-          localStorage.setItem("email", data.login.email);
+          setEmailLocally(data.login.email);
+          // localStorage.setItem("email", data.login.email);
 
           setShowModalObject({
             showInfoModal: true,
@@ -134,15 +156,21 @@ const Login = () => {
           });
         }
 
+        // console.log("daat::::", data.login);
+
         const accessToken = data.login.token;
 
-        localStorage.setItem("token", accessToken);
+        // localStorage.setItem("token", accessToken);
 
-        const decodedUser = jwtDecode(accessToken);
+        // const decodedUser = jwtDecode(accessToken);
 
-        console.log("login::", decodedUser);
+        // // console.log("login::", decodedUser);
 
-        dispatch({ type: "SET_CURRENT_USER", payload: decodedUser });
+        // localStorage.setItem("currentUser", JSON.stringify(decodedUser));
+
+        setCurrentUser(accessToken);
+
+        // dispatch({ type: "SET_CURRENT_USER", payload: decodedUser });
         resetEmail();
         resetPassword();
         navigate("/dashboard");
@@ -155,8 +183,24 @@ const Login = () => {
         setValidatedObject({
           ...validatedObject,
           isWarning: true,
-          message: err?.response?.data?.error,
+          message: err?.message,
         });
+
+        if (
+          err.message ===
+          "Your account is not verified yet, please verify your account first"
+        ) {
+          // localStorage.setItem("email", email);
+          setEmailLocally(email);
+
+          setShowModalObject({
+            showInfoModal: true,
+            showSuccessModal: false,
+            ShowWarningModal: false,
+            msg: "Your account is not verified yet, please verify your account first",
+          });
+          // navigate("/verify-otp");
+        }
       }
     }
   };
@@ -188,7 +232,8 @@ const Login = () => {
                     color="primary"
                     size="large"
                     variant="contained"
-                    onClick={() => navigate("/signup")}>
+                    onClick={() => navigate("/signup")}
+                  >
                     Register
                   </Button>
                 </div>
@@ -240,7 +285,8 @@ const Login = () => {
 
                   {validatedObject.isWarning && (
                     <ErrorMessageAlert
-                      message={validatedObject.message}></ErrorMessageAlert>
+                      message={validatedObject.message}
+                    ></ErrorMessageAlert>
                   )}
 
                   <div className="col-12">
@@ -254,7 +300,8 @@ const Login = () => {
                         <Button
                           type="submit"
                           variant="contained"
-                          className="btn btn-primary px-4">
+                          className="btn btn-primary px-4"
+                        >
                           {loginApiLoadingObject.isLoading === true ? (
                             <SimpleSpinner></SimpleSpinner>
                           ) : (
@@ -293,14 +340,16 @@ const Login = () => {
           msg={showModalObject.msg}
           onCloseModal={() => {
             onCloseInfoModal();
-          }}></InfoModal>
+          }}
+        ></InfoModal>
       </div>
       <ToastContainer />
     </>
   );
 };
 
-const mapStateToProps = (state) => ({
-  auth: state.loginReducer,
-});
-export default connect(mapStateToProps, { setCurrentUser })(Login);
+// const mapStateToProps = (state) => ({
+//   auth: state.loginReducer,
+// });
+// export default connect(mapStateToProps, { setCurrentUser })(Login);
+export default Login;

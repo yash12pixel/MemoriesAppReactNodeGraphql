@@ -4,6 +4,7 @@ import PersonOutlineIcon from "@material-ui/icons/PersonOutline";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { REMOVE_CURRENT_USER } from "../../constants/actionTypes";
+import { removeCurrentUser } from "../../utils/userOperations";
 const AccountMenu = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -27,10 +28,11 @@ const AccountMenu = () => {
         </Dropdown.Item>
         <Dropdown.Item
           onClick={() => {
-            localStorage.removeItem("token");
+            removeCurrentUser();
             dispatch({ type: REMOVE_CURRENT_USER, payload: {} });
             navigate("/login");
-          }}>
+          }}
+        >
           <p style={{ color: "black" }}>Logout</p>
         </Dropdown.Item>
       </Dropdown.Menu>

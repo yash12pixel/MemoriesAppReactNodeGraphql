@@ -1,5 +1,12 @@
-import React, { useState, useEffect } from "react";
-import { TextField, Button, Typography, Paper, Input } from "@mui/material";
+import React, { useState, useEffect, useRef } from "react";
+import {
+  TextField,
+  Button,
+  Typography,
+  Paper,
+  Input,
+  Grid,
+} from "@mui/material";
 import { useSelector } from "react-redux";
 
 import useStyles from "./styles";
@@ -8,6 +15,9 @@ import { CREATE_POST, UPDATE_POST } from "../../graphql/Mutation";
 
 import { useMutation, useQuery } from "@apollo/client";
 import { GET_POSTS_BY_USER, GET_POST } from "../../graphql/Query";
+import { getCurrentUser } from "../../utils/userOperations";
+import Backdrop from "@mui/material/Backdrop";
+import CircularProgress from "@mui/material/CircularProgress";
 
 const Form = ({ currentId, setCurrentId }) => {
   // console.log("currentId::::", currentId);
@@ -18,7 +28,9 @@ const Form = ({ currentId, setCurrentId }) => {
     tags: "",
     selectedFile: "",
   });
-  // console.log("files:::", postData.selectedFile);
+  const [tags, setTags] = useState([]);
+  const [editTags, setEditTags] = useState([]);
+  // console.log("files:::", postData);
   const [validatedObject, setValidatedObject] = useState({
     isWarning: false,
     message: "",
@@ -29,11 +41,18 @@ const Form = ({ currentId, setCurrentId }) => {
     isDisable: false,
   });
 
+  // const [open, setOpen] = useState(false);
+
   const post = useSelector((state) =>
     currentId
       ? state.posts.posts.find((message) => message._id === currentId)
       : null
   );
+  // const user = useSelector((state) => state.loginReducer.user);
+  // const storedUser = localStorage.getItem("currentUser");
+  const currentUser = getCurrentUser();
+  const inputFileRef = useRef(null);
+
   // const postState = useSelector((state) => state.posts);
   const classes = useStyles();
   const [createPost] = useMutation(CREATE_POST);
@@ -46,9 +65,10 @@ const Form = ({ currentId, setCurrentId }) => {
       setPostData({
         creator: postData?.getPost.creator,
         message: postData?.getPost.message,
-        tags: postData?.getPost.tags,
+        // tags: postData?.getPost.tags,
         title: postData?.getPost.title,
       });
+      setEditTags(postData?.getPost.tags);
       return data;
     },
   });
@@ -60,6 +80,17 @@ const Form = ({ currentId, setCurrentId }) => {
   useEffect(() => {
     if (post) setPostData(post);
   }, [post]);
+
+  useEffect(() => {
+    setPostData({
+      creator: data?.getPost?.creator,
+      message: data?.getPost?.message,
+      // tags: data?.getPost?.tags,
+      title: data?.getPost?.title,
+      // selectedFile: data?.getPost?.selectedFile?.filename,
+    });
+    setEditTags(data?.getPost?.tags);
+  }, [data?.getPost]);
 
   const clear = () => {
     setCurrentId(0);
@@ -105,6 +136,60 @@ const Form = ({ currentId, setCurrentId }) => {
   //   }
   // };
 
+  let handleAddTags = async (e) => {
+    e.preventDefault();
+    if (tags.length > 2) {
+      setPostData({ ...postData, tags: "" });
+      return setValidatedObject({
+        ...validatedObject,
+        isWarning: true,
+        message: "You can not add more than 3 tags",
+      });
+    }
+    // console.log("target", e.target);
+    // setFeatures([...features, e.target[0].value]);
+    if (tags === undefined) {
+      setTags([postData.tags]);
+    } else {
+      setTags([...tags, postData.tags]);
+    }
+    setPostData({ ...postData, tags: "" });
+    console.log("tags", tags);
+  };
+
+  let handleEditTags = async (e) => {
+    e.preventDefault();
+    if (editTags.length > 2) {
+      setPostData({ ...postData, tags: "" });
+
+      return setValidatedObject({
+        ...validatedObject,
+        isWarning: true,
+        message: "You can not add more than 3 tags",
+      });
+    }
+    console.log("edit");
+    // setFeatures([...features, e.target[0].value]);
+    if (editTags === undefined) {
+      setEditTags([postData.tags]);
+    } else {
+      setEditTags([...editTags, postData.tags]);
+    }
+    setPostData({ ...postData, tags: "" });
+    // console.log("tags", tags);
+  };
+
+  let removeAddTags = (index) => {
+    // e.preventDefault();
+    setTags(tags.filter((item, i) => i !== index));
+  };
+
+  let removeEditTags = (index) => {
+    console.log("index", index);
+    // e.preventDefault();
+    setEditTags(editTags.filter((item, i) => i !== index));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -138,36 +223,91 @@ const Form = ({ currentId, setCurrentId }) => {
         isWarning: true,
         message: "Message is missing",
       });
-    } else if (
-      postData.tags === "" ||
-      postData.tags === null ||
-      postData.tags === undefined
-    ) {
+    } else if (tags === "" || tags === null || tags === undefined) {
       return setValidatedObject({
         ...validatedObject,
         isWarning: true,
         message: "Tags is missing",
       });
-    }
-    // else if (
-    //   postData.selectedFile === "" ||
-    //   postData.selectedFile === null ||
-    //   postData.selectedFile === undefined
-    // ) {
-    //   return setValidatedObject({
-    //     ...validatedObject,
-    //     isWarning: true,
-    //     message: "Image file is missing",
-    //   });
-    // }
-    else {
+    } else if (tags.length > 3) {
+      return setValidatedObject({
+        ...validatedObject,
+        isWarning: true,
+        message: "You can not add more than 3 tags",
+      });
+    } else if (
+      currentId === 0 &&
+      postData.selectedFile === undefined
+      // postData.selectedFile === undefined
+    ) {
+      return setValidatedObject({
+        ...validatedObject,
+        isWarning: true,
+        message: "Image file is missing",
+      });
+    } else if (currentId !== 0 && editTags.length > 3) {
+      return setValidatedObject({
+        ...validatedObject,
+        isWarning: true,
+        message: "You can not add more than 3 tags",
+      });
+    } else {
       if (currentId === 0) {
-        setLoadingObject({
-          ...loadingObject,
-          isDisable: true,
-          isLoading: true,
-        });
-        console.log("postdata", postData);
+        try {
+          setLoadingObject({
+            ...loadingObject,
+            isDisable: true,
+            isLoading: true,
+          });
+          setValidatedObject({
+            ...validatedObject,
+            isWarning: false,
+            message: "",
+          });
+
+          const { title, message, creator, selectedFile } = postData;
+          // console.log("post::", selectedFile);
+          await createPost({
+            variables: {
+              title: title,
+              message: message,
+              creator: creator,
+              tags: tags,
+              selectedFile: selectedFile,
+            },
+            refetchQueries: [
+              {
+                query: GET_POSTS_BY_USER,
+                variables: {
+                  id: currentUser.id,
+                },
+              },
+            ],
+            fetchPolicy: "no-cache",
+          });
+          // console.log("result add:::", result);
+          // setOpen(false);
+
+          setLoadingObject({
+            ...loadingObject,
+            isDisable: false,
+            isLoading: false,
+          });
+          setTags([]);
+          if (inputFileRef.current) {
+            inputFileRef.current.value = "";
+          }
+          clear();
+        } catch (error) {
+          setValidatedObject({
+            ...validatedObject,
+            isWarning: true,
+            message: error?.message,
+          });
+        }
+
+        // setOpen(true);
+        // console.log("postdata", postData);
         // dispatch(createPost(postData));
         // const formData = new FormData();
         // const selectedFile = formData.append(
@@ -178,54 +318,67 @@ const Form = ({ currentId, setCurrentId }) => {
         // const message = formData.append("message", postData.message);
         // const tags = formData.append("tags", postData.tags);
         // const title = formData.append("title", postData.title);
-        const { title, message, creator, tags, selectedFile } = postData;
-        console.log("post::", selectedFile);
-        const result = createPost({
-          variables: {
-            title: title,
-            message: message,
-            creator: creator,
-            tags: tags,
-            selectedFile: selectedFile,
-          },
-          refetchQueries: [{ query: GET_POSTS_BY_USER }],
-          fetchPolicy: "no-cache",
-        });
-        console.log("result add:::", result);
-        setLoadingObject({
-          ...loadingObject,
-          isDisable: false,
-          isLoading: false,
-        });
-        clear();
       } else {
-        console.log("ye upfdaa");
-        setLoadingObject({
-          ...loadingObject,
-          isDisable: true,
-          isLoading: true,
-        });
+        try {
+          setLoadingObject({
+            ...loadingObject,
+            isDisable: true,
+            isLoading: true,
+          });
+          setValidatedObject({
+            ...validatedObject,
+            isWarning: false,
+            message: "",
+          });
+
+          const { title, message, creator, selectedFile } = postData;
+          // console.log("currentId:::1111", currentId);
+          const id = currentId;
+          console.log("edittdags::::", editTags);
+          await updatePost({
+            variables: {
+              id,
+              title,
+              message,
+              creator,
+              tags: editTags,
+              selectedFile,
+            },
+            refetchQueries: [
+              {
+                query: GET_POSTS_BY_USER,
+                variables: {
+                  id: currentUser.id,
+                },
+              },
+            ],
+          });
+          // console.log("result add:::", result);
+          setLoadingObject({
+            ...loadingObject,
+            isDisable: false,
+            isLoading: false,
+          });
+          // setOpen(false);
+          setTags([]);
+          setEditTags([]);
+          setPostData({ ...postData, tags: "" });
+          if (inputFileRef.current) {
+            inputFileRef.current.value = "";
+          }
+          clear();
+        } catch (error) {
+          setValidatedObject({
+            ...validatedObject,
+            isWarning: true,
+            message: error?.message,
+          });
+        }
+        // console.log("ye upfdaa");
+
+        // setOpen(true);
+
         // dispatch(updatePost(currentId, postData));
-        const { title, message, creator, tags } = postData;
-        // console.log("currentId:::1111", currentId);
-        const id = currentId;
-        const result = updatePost({
-          variables: {
-            id,
-            title,
-            message,
-            creator,
-            tags,
-          },
-          refetchQueries: [{ query: GET_POSTS_BY_USER }],
-        });
-        console.log("result add:::", result);
-        setLoadingObject({
-          ...loadingObject,
-          isDisable: false,
-          isLoading: false,
-        });
-        clear();
       }
     }
   };
@@ -237,14 +390,16 @@ const Form = ({ currentId, setCurrentId }) => {
         noValidate
         method="post"
         className={`${classes.root} ${classes.form}`}
-        onSubmit={handleSubmit}>
+        onSubmit={handleSubmit}
+      >
         {validatedObject.isWarning && (
           <ErrorMessageAlert
-            message={validatedObject.message}></ErrorMessageAlert>
+            message={validatedObject.message}
+          ></ErrorMessageAlert>
         )}
         {loading && <p>loading</p>}
         <Typography variant="h6">
-          {currentId ? `Editing "${postData.title}"` : "Creating a Memory"}
+          {currentId ? `Editing "${postData.title}"` : "Creating a Memories"}
         </Typography>
         <TextField
           name="creator"
@@ -276,7 +431,7 @@ const Form = ({ currentId, setCurrentId }) => {
             setPostData({ ...postData, message: e.target.value })
           }
         />
-        <TextField
+        {/* <TextField
           name="tags"
           variant="outlined"
           fullWidth
@@ -285,7 +440,117 @@ const Form = ({ currentId, setCurrentId }) => {
           onChange={(e) =>
             setPostData({ ...postData, tags: e.target.value.split(",") })
           }
-        />
+        /> */}
+        {/* <form onSubmit={handleFeature}> */}
+        {currentId ? (
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={8}>
+              <TextField
+                name="tags"
+                // variant="outlined"
+                placeholder="Tags"
+                fullWidth
+                value={postData.tags}
+                onChange={(e) =>
+                  setPostData({ ...postData, tags: e.target.value })
+                }
+              />
+            </Grid>
+            <Grid item xs={2}>
+              <Button
+                variant="contained"
+                color="primary"
+                size="small"
+                // type="submit"
+                onClick={handleEditTags}
+              >
+                Add Tag
+              </Button>
+            </Grid>
+          </Grid>
+        ) : (
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={8}>
+              <TextField
+                name="tags"
+                // variant="outlined"
+                placeholder="Tags"
+                fullWidth
+                value={postData.tags}
+                onChange={(e) =>
+                  setPostData({ ...postData, tags: e.target.value })
+                }
+              />
+            </Grid>
+            <Grid item xs={2}>
+              <Button
+                variant="contained"
+                color="primary"
+                size="small"
+                // type="submit"
+                onClick={handleAddTags}
+              >
+                Add Tag
+              </Button>
+            </Grid>
+          </Grid>
+        )}
+
+        <div className="addedFeatures" style={{ display: "flex", gap: "8px" }}>
+          {tags &&
+            tags?.map((feature, index) => (
+              <div className="item" key={index}>
+                <button
+                  style={{
+                    height: "50px",
+                    fontSize: "20px",
+                    fontWeight: "400",
+                    background: "transparent",
+                    color: "blue",
+                    border: "1px solid blue",
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: "20px",
+                    marginTop: "10px",
+                    marginBottom: "10px",
+                  }}
+                  onClick={() =>
+                    //   dispatch({ type: "REMOVE_FEATURE", payload: f })
+                    removeAddTags(index)
+                  }
+                >
+                  {feature}
+                  <span>X</span>
+                </button>
+              </div>
+            ))}
+          {editTags &&
+            editTags?.map((feature, index) => (
+              <div className="item" key={index}>
+                <button
+                  style={{
+                    height: "50px",
+                    fontSize: "20px",
+                    fontWeight: "400",
+                    background: "transparent",
+                    color: "blue",
+                    border: "1px solid blue",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "20px",
+                  }}
+                  onClick={() =>
+                    //   dispatch({ type: "REMOVE_FEATURE", payload: f })
+                    removeEditTags(index)
+                  }
+                >
+                  {feature}
+                  <span>X</span>
+                </button>
+              </div>
+            ))}
+        </div>
+        {/* </form> */}
         {/* <div className={classes.fileInput}>
           <FileBase
             type="file"
@@ -297,12 +562,22 @@ const Form = ({ currentId, setCurrentId }) => {
         </div> */}
         <Input
           type="file"
-          id="file"
+          id="selectedFile"
+          inputRef={inputFileRef}
           onChange={(e) =>
             setPostData({ ...postData, selectedFile: e.target.files[0] })
           }
           style={{ margin: "5px 20px 8px 0" }}
         />
+        {/* <input
+          type="file"
+          id="selectedFile"
+          ref={inputFileRef}
+          onChange={(e) =>
+            setPostData({ ...postData, selectedFile: e.target.files[0] })
+          }
+          style={{ margin: "5px 20px 8px 0" }}
+        /> */}
         <Button
           disabled={loadingObject.isDisable}
           className={classes.buttonSubmit}
@@ -311,7 +586,8 @@ const Form = ({ currentId, setCurrentId }) => {
           size="large"
           type="submit"
           style={{ margin: "8px 0 0 0" }}
-          fullWidth>
+          fullWidth
+        >
           {currentId ? "Update" : "Submit"}
         </Button>
 
@@ -321,9 +597,17 @@ const Form = ({ currentId, setCurrentId }) => {
           size="medium"
           style={{ margin: "10px 0 0 0" }}
           onClick={clear}
-          fullWidth>
+          fullWidth
+        >
           Clear
         </Button>
+
+        <Backdrop
+          sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
+          open={loadingObject.isLoading}
+        >
+          <CircularProgress color="inherit" />
+        </Backdrop>
       </form>
     </Paper>
   );

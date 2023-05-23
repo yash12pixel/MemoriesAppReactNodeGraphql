@@ -59,7 +59,7 @@ export const VERIFY_USER = gql`
 `;
 
 export const RESEND_USER_OTP = gql`
-  mutation resendUserOtp($email: String) {
+  mutation resendUserOtp($email: String!) {
     resendUserOtp(email: $email) {
       id
       firstName
@@ -70,14 +70,6 @@ export const RESEND_USER_OTP = gql`
       otpCreateTime
       isOTPVerified
       token
-      posts {
-        id
-        title
-        message
-        creator
-        tags
-        likeCount
-      }
     }
   }
 `;
@@ -121,7 +113,6 @@ export const UPDATE_USER_PASSWORD = gql`
       otpCode
       otpCreateTime
       isOTPVerified
-      token
     }
   }
 `;
@@ -205,12 +196,14 @@ export const CREATE_POST = gql`
     $message: String!
     $creator: String!
     $tags: [String]!
+    $selectedFile: Upload
   ) {
     createPost(
       title: $title
       message: $message
       creator: $creator
       tags: $tags
+      selectedFile: $selectedFile
     ) {
       id
       title
@@ -218,6 +211,17 @@ export const CREATE_POST = gql`
       creator
       tags
       likeCount
+      selectedFile {
+        public_id
+        asset_id
+        version_id
+        width
+        height
+        format
+        filename
+        url
+        created_at
+      }
     }
   }
 `;
@@ -229,6 +233,7 @@ export const UPDATE_POST = gql`
     $message: String!
     $creator: String!
     $tags: [String]!
+    $selectedFile: Upload
   ) {
     updatePost(
       id: $id
@@ -236,6 +241,7 @@ export const UPDATE_POST = gql`
       message: $message
       creator: $creator
       tags: $tags
+      selectedFile: $selectedFile
     ) {
       id
       title
@@ -243,6 +249,17 @@ export const UPDATE_POST = gql`
       creator
       tags
       likeCount
+      selectedFile {
+        public_id
+        asset_id
+        version_id
+        width
+        height
+        format
+        filename
+        url
+        created_at
+      }
     }
   }
 `;
@@ -256,6 +273,17 @@ export const LIKE_POST = gql`
       creator
       tags
       likeCount
+      selectedFile {
+        public_id
+        asset_id
+        version_id
+        width
+        height
+        format
+        filename
+        url
+        created_at
+      }
     }
   }
 `;
@@ -269,6 +297,17 @@ export const DELETE_POST = gql`
       creator
       tags
       likeCount
+      selectedFile {
+        public_id
+        asset_id
+        version_id
+        width
+        height
+        format
+        filename
+        url
+        created_at
+      }
     }
   }
 `;

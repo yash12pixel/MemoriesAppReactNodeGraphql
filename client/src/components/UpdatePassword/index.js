@@ -17,6 +17,7 @@ import { TextField, Button, Typography } from "@mui/material";
 // import { useDispatch } from "react-redux";
 import { UPDATE_USER_PASSWORD } from "../../graphql/Mutation";
 import { useMutation } from "@apollo/client";
+import { removeCurrentUser } from "../../utils/userOperations";
 
 const UpdatePassword = () => {
   const classes = useStyles();
@@ -55,6 +56,11 @@ const UpdatePassword = () => {
   };
 
   let validateRequest = () => {
+    const re =
+      /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9])(?!.*\s).{9,}$/;
+
+    const passwordValidation = re.test(String(bindPassword.value));
+
     if (otpCode === "" || otpCode === null || otpCode === undefined) {
       return setValidatedObject({
         ...validatedObject,
@@ -72,6 +78,13 @@ const UpdatePassword = () => {
         ...validatedObject,
         isWarning: true,
         message: "Password is required!",
+      });
+    } else if (!passwordValidation) {
+      return setValidatedObject({
+        ...validatedObject,
+        isWarning: true,
+        message:
+          "Please choose a more secure password. password must be greater than 8 characters long and contain at least one lowercase letter, one uppercase letter, one numeric digit, and one special character",
       });
     } else if (password !== confirmPassword) {
       return setValidatedObject({
@@ -108,7 +121,7 @@ const UpdatePassword = () => {
         // dispatch({ type: UPDATE_PASSWORD_API_REQUEST, payload: {} });
 
         // console.log("data::", data);
-        updatePassword({
+        await updatePassword({
           variables: {
             password,
             otpCode,
@@ -126,6 +139,9 @@ const UpdatePassword = () => {
           isLoading: false,
           isDisable: false,
         });
+        // localStorage.removeItem("token");
+        // localStorage.removeItem("currentUser");
+        removeCurrentUser();
         setShowModalObject({
           ...showModalObject,
           showSuccessModal: true,
@@ -149,7 +165,7 @@ const UpdatePassword = () => {
         setValidatedObject({
           ...validatedObject,
           isWarning: true,
-          message: err?.response?.data?.error,
+          message: err.message,
         });
       }
     }
@@ -215,6 +231,11 @@ const UpdatePassword = () => {
                 </div>
               </div>
               <form onSubmit={updatePass} className="row g-3 pt-4">
+                {validatedObject.isWarning && (
+                  <ErrorMessageAlert
+                    message={validatedObject.message}
+                  ></ErrorMessageAlert>
+                )}
                 <div className="col-md-12">
                   {/* <label for="usename" className="form-label">
                     Email OTP Code
@@ -265,10 +286,6 @@ const UpdatePassword = () => {
                   />
                 </div>
 
-                {validatedObject.isWarning && (
-                  <ErrorMessageAlert
-                    message={validatedObject.message}></ErrorMessageAlert>
-                )}
                 <div className="col-md-12">
                   <div className="form-check">
                     {/* <input isChecked={false} onChange={(e) => { alert(e.target.value) }} className="form-check-input" type="checkbox" id="gridCheck" />
@@ -287,7 +304,8 @@ const UpdatePassword = () => {
                       fullWidth
                       size="large"
                       color="primary"
-                      className="btn btn-primary px-4 me-4">
+                      className="btn btn-primary px-4 me-4"
+                    >
                       {loadingObject.isLoading === true ? (
                         <SimpleSpinner></SimpleSpinner>
                       ) : (
@@ -303,7 +321,8 @@ const UpdatePassword = () => {
                       variant="outlined"
                       size="medium"
                       fullWidth
-                      className="btn btn-outline-primary px-4">
+                      className="btn btn-outline-primary px-4"
+                    >
                       Cancel
                     </Button>
                   </div>
@@ -320,7 +339,8 @@ const UpdatePassword = () => {
         msg={showModalObject.msg}
         onCloseModal={() => {
           onCloseErrorModal();
-        }}></SuccessModal>
+        }}
+      ></SuccessModal>
     </div>
   );
 };

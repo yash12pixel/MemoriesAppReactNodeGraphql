@@ -1,9 +1,9 @@
-import React from "react";
-import ReactDOM from "react-dom";
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import './index.css';
+import App from './App';
 import { Provider } from "react-redux";
 
-import App from "./App";
-import "./index.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import configureStore from "./reducers/store";
 
@@ -13,6 +13,7 @@ import {
   // createHttpLink,
   ApolloProvider,
 } from "@apollo/client";
+
 import { createUploadLink } from "apollo-upload-client";
 import { setContext } from "@apollo/client/link/context";
 
@@ -41,13 +42,14 @@ const client = new ApolloClient({
 
 const store = configureStore(window.__PRELOADED_STATE__);
 
-// const store = createStore(reducers, compose(applyMiddleware(thunk)));
 
-ReactDOM.render(
-  <ApolloProvider client={client}>
-    <Provider store={store}>
-      <App />
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
+<ApolloProvider client={client}>
+  <Provider store={store}>
+    <App />
     </Provider>
-  </ApolloProvider>,
-  document.getElementById("root")
+ </ApolloProvider>
 );
+
+

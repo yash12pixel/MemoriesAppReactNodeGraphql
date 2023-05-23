@@ -1,6 +1,8 @@
 import { gql } from "apollo-server-express";
 
 const postTypeDefs = gql`
+  scalar Upload
+
   type User {
     id: ID!
     firstName: String!
@@ -14,40 +16,27 @@ const postTypeDefs = gql`
     posts: [Post]
   }
 
-  type File {
-    public_id: String
-    asset_id: String
-    version_id: String
-    width: String
-    height: String
-    format: String
-    original_filename: String
-    url: String
-  }
-
   type Post {
     id: ID!
     title: String!
     message: String!
     creator: String!
     tags: [String]!
+    selectedFile: File
     likeCount: Int
-
     user: User!
   }
 
-  input CreatePost {
-    title: String!
-    message: String!
-    creator: String!
-    tags: [String]!
-  }
-
-  input UpdatePost {
-    title: String
-    message: String
-    creator: String
-    tags: [String]
+  type File {
+    public_id: String!
+    asset_id: String
+    version_id: String
+    width: String!
+    height: String!
+    format: String
+    filename: String
+    url: String!
+    created_at: String
   }
 
   type Query {
@@ -61,6 +50,7 @@ const postTypeDefs = gql`
       message: String!
       creator: String!
       tags: [String]!
+      selectedFile: Upload
     ): Post
     updatePost(
       id: ID!
@@ -68,6 +58,7 @@ const postTypeDefs = gql`
       message: String!
       creator: String!
       tags: [String]!
+      selectedFile: Upload
     ): Post
     deletePost(id: ID): Post
     likePost(id: ID): Post

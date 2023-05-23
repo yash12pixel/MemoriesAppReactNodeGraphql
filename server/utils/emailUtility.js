@@ -21,9 +21,9 @@ const sendEmail = (to, subject, html) => {
     transporter.sendMail(mailOptions, async (error, info) => {
       if (error) {
         console.log("error::", error);
-        resolve({ delivered: false, status: "Fail" });
+        resolve({ delivered: false, status: "Fail", info: info });
       } else {
-        resolve({ delivered: true, status: "ok" });
+        resolve({ delivered: true, status: "ok", info: info });
       }
     });
   });
